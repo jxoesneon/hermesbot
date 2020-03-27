@@ -1,0 +1,22 @@
+{
+    "id": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS82MzdjNzU4ZC1iYWYzLTRmOTUtODc1Mi1iZGE3YjFkYjUwYWM",
+    "emails": [
+        "joseeroj@cisco.com"
+    ],
+    "phoneNumbers": [
+        {
+            "type": "work",
+            "value": "+1 919 993 9302"
+        }
+    ],
+    "displayName": "Jose Eduardo Rojas",
+    "nickName": "Jose Eduardo",
+    "firstName": "Jose Eduardo",
+    "lastName": "Rojas",
+    "avatar": "https://8e325148c33e40909d40-0b990d1d119de8e505829619be483465.ssl.cf1.rackcdn.com/V1~637c758d-baf3-4f95-8752-bda7b1db50ac~4283de4db09046efb31111d15269b667~1600",
+    "orgId": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi8xZWI2NWZkZi05NjQzLTQxN2YtOTk3NC1hZDcyY2FlMGUxMGY",
+    "created": "2018-12-11T02:05:26.007Z",
+    "lastActivity": "2020-03-27T00:19:50.975Z",
+    "status": "active",
+    "type": "person"
+}
