@@ -1,13 +1,8 @@
-import concurrent.futures as confut
-import json
 import os
-import threading
+import json
 import time
-from pprint import pprint
-
 import requests
-from future.utils import iterkeys
-from webexteamsbot import TeamsBot
+import webexteamsbot
 
 
 def notify():
@@ -30,20 +25,14 @@ bot_url = os.getenv("TEAMS_BOT_URL")
 bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
 
 # Create a Bot Object
-bot = TeamsBot(bot_app_name,teams_bot_token=teams_token,teams_bot_url=bot_url,teams_bot_email=bot_email,)
+bot = webexteamsbot.TeamsBot(bot_app_name,teams_bot_token=teams_token,teams_bot_url=bot_url,teams_bot_email=bot_email,)
 
 
 ######## File Management ########
 def write_to_file(data):
     with open(filepath, "w+") as file:
-        json.dump(data, file)
-        
-def parse_user():
-    data = current_user
-    data = str(data).replace("'",'"')
-    data = f"[{data}]"
-    return data
-        
+        json.dump(data, file, sort_keys=True, indent=4, separators=(',', ': '))
+
 def check_user_file():
     try:
         with open(filepath, "r+") as file:
@@ -52,20 +41,15 @@ def check_user_file():
         print("The file has not been initialized",
               "initializing ...",
               sep="\n")
-        data = parse_user()
-        write_to_file(data)
+        write_to_file({"users":{current_user["id"]:current_user}})
         print("done")
-        
+
 def load_users(file=False):
     check_user_file()
     id_list = []
     with open(filepath, "r") as file:
         data = json.load(file)
-    for entry in data:
-        if len(data) > 1:
-            id_list.append(entry["id"])
-        else:
-            id_list.append(entry[0])
+    id_list.append(list(data["users"]))
     if file:
         return data
     else:
@@ -73,22 +57,22 @@ def load_users(file=False):
 
 def user_in_file():
     stored_users = load_users()
-    if current_user["id"] in stored_users:
+    if current_user["id"] in stored_users["users"]:
         return True
     else:
         return False
-    
+
 
 def update_file():
     if user_in_file():
         return "User already in file"
     else:
         stored_users = load_users(file=True)
-        stored_users.append(current_user)
+        stored_users["users"][current_user["id"]] = current_user
         write_to_file(stored_users)
         user = current_user["displayName"]
         return f"I've added you, {user}"
-        
+
 ######## ######## ########
 
 # A simple command that returns a basic string that will be sent as a reply
@@ -108,12 +92,11 @@ def get_user_info(incoming_msg):
     response = requests.request("GET", url, headers=headers, data = payload)
     global current_user
     current_user = response.json()
-    print(type(current_user))
     # result = str()
     # for key, value in current_user.items():
     #     result = result + f"{key}:{value}\n"
     return str(current_user)
-     
+
 def subscribe(incoming_msg):
     get_user_info(incoming_msg)
     return update_file()
