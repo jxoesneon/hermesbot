@@ -1,6 +1,5 @@
 import os
 import json
-import time
 import requests
 import webexteamsbot
 
@@ -12,7 +11,9 @@ def notify():
 #     schedule.every().day.at(f"{hour}:{min}").do(notify,'It is 01:00')
 #     threading.time(60, ping_time).start() # wait one minute
 
+
 filepath = "peopletonotify.json"
+
 
 # API vars
 baseurl = "https://api.ciscospark.com/v1/"
@@ -25,24 +26,29 @@ bot_url = os.getenv("TEAMS_BOT_URL")
 bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
 
 # Create a Bot Object
-bot = webexteamsbot.TeamsBot(bot_app_name,teams_bot_token=teams_token,teams_bot_url=bot_url,teams_bot_email=bot_email,)
+bot = webexteamsbot.TeamsBot(bot_app_name,
+                             teams_bot_token=teams_token,
+                             teams_bot_url=bot_url,
+                             teams_bot_email=bot_email)
 
 
-######## File Management ########
+# ####### File Management ########
 def write_to_file(data):
     with open(filepath, "w+") as file:
         json.dump(data, file, sort_keys=True, indent=4, separators=(',', ': '))
 
+
 def check_user_file():
     try:
         with open(filepath, "r+") as file:
-            number_of_users = len(json.load(file))
+            _ = len(json.load(file))
     except FileNotFoundError:
         print("The file has not been initialized",
               "initializing ...",
               sep="\n")
-        write_to_file({"users":{current_user["id"]:current_user}})
+        write_to_file({"users": {current_user["id"]: current_user}})
         print("done")
+
 
 def load_users(file=False):
     check_user_file()
@@ -54,6 +60,7 @@ def load_users(file=False):
         return data
     else:
         return id_list
+
 
 def user_in_file():
     stored_users = load_users()
@@ -73,7 +80,8 @@ def update_file():
         user = current_user["displayName"]
         return f"I've added you, {user}"
 
-######## ######## ########
+# ####### ######## ########
+
 
 # A simple command that returns a basic string that will be sent as a reply
 def do_something(incoming_msg):
@@ -84,12 +92,13 @@ def do_something(incoming_msg):
     """
     return f"I did what you said - {incoming_msg.text}"
 
+
 def get_user_info(incoming_msg):
-    personId= incoming_msg.personId
+    personId = incoming_msg.personId
     url = f"{baseurl}people/{personId}"
-    payload  = {}
+    payload = {}
     headers = {'Authorization': f'Bearer {teams_token}'}
-    response = requests.request("GET", url, headers=headers, data = payload)
+    response = requests.request("GET", url, headers=headers, data=payload)
     global current_user
     current_user = response.json()
     # result = str()
@@ -97,19 +106,21 @@ def get_user_info(incoming_msg):
     #     result = result + f"{key}:{value}\n"
     return str(current_user)
 
+
 def subscribe(incoming_msg):
     get_user_info(incoming_msg)
     return update_file()
 
+
 def unsubscribe(incoming_msg):
     pass
+
 
 # Add new commands to the box.
 bot.add_command("/dosomething", "help for do something", do_something)
 bot.add_command("/sub", "I will ping you at a specified time", subscribe)
 bot.add_command("/unsubscribe", "I will stop pinging you", unsubscribe)
 bot.add_command("/me", "your data", get_user_info)
-
 
 
 if __name__ == "__main__":
