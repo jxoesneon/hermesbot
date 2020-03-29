@@ -2,21 +2,14 @@ import os
 import json
 import requests
 import webexteamsbot
-
-
-def notify():
-    pass
-
-# def ping_time(hour, min):
-#     schedule.every().day.at(f"{hour}:{min}").do(notify,'It is 01:00')
-#     threading.time(60, ping_time).start() # wait one minute
+from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
 
 
 filepath = "peopletonotify.json"
 
 
 # API vars
-baseurl = "https://api.ciscospark.com/v1/"
+baseurl = "https://api.ciscospark.com/v1"
 current_user = None
 
 # Retrieve required details from environment variables
@@ -93,9 +86,17 @@ def do_something(incoming_msg):
     return f"I did what you said - {incoming_msg.text}"
 
 
+def get_info(personId):
+    url = f"{baseurl}/people/{personId}"
+    payload = {}
+    headers = {'Authorization': f'Bearer {teams_token}'}
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response.json()
+
+
 def get_user_info(incoming_msg):
     personId = incoming_msg.personId
-    url = f"{baseurl}people/{personId}"
+    url = f"{baseurl}/people/{personId}"
     payload = {}
     headers = {'Authorization': f'Bearer {teams_token}'}
     response = requests.request("GET", url, headers=headers, data=payload)
@@ -107,6 +108,57 @@ def get_user_info(incoming_msg):
     return str(current_user)
 
 
+def ping(user, message="Hi"):
+    url = f"{baseurl}/messages/"
+    headers = {'Authorization': f'Bearer {teams_token}'}
+    payload = {'toPersonId': f"{user}", 'text': f"{message}"}
+    requests.request("POST", url, headers=headers, data=payload)
+
+
+def ping_single_user(user, message=None, time=None):
+    if time:
+        pass
+    else:
+        ping(user, message)
+
+
+def ping_all():
+    users_to_ping = load_users(file=True)["users"]
+    for user in users_to_ping:
+        user_info = users_to_ping[user]
+        name = user_info["displayName"]
+        message = f"Hello {name}, remember to send the hourly email!"
+        ping_single_user(user, message)
+
+
+def ping_all_users(incoming_msg):
+    message = f"Broadcast message requestesd by {incoming_msg.personEmail}"
+    users_to_ping = load_users()["users"]
+    responses = []
+    for user in users_to_ping:
+        ping_single_user(user, message)
+        responses.append(user)
+    return f"Ping sent to {len(users_to_ping)} users."
+
+
+# Start the scheduler
+sched = Scheduler()
+sched.remove_all_jobs()
+sched.start()
+
+
+# Schedule ping times
+hours = []
+for h in range(21, 24):
+    hours.append(h)
+for h in range(6):
+    hours.append(h)
+for hour in hours:
+    sched.add_job(ping_all, "cron", hour=hour, minute=55)
+# for minute in range(60):
+#     sched.add_job(ping_all, "cron", minute=minute)
+
+
 def subscribe(incoming_msg):
     get_user_info(incoming_msg)
     return update_file()
@@ -116,11 +168,27 @@ def unsubscribe(incoming_msg):
     pass
 
 
+def list_subscribers(_):
+    subscribers = load_users()
+    subList = ""
+    num = 0
+    for sub in subscribers["users"]:
+        user_data = get_info(sub)
+        num += 1
+        name = user_data["displayName"]
+        email = user_data["emails"][0]
+        user_entry = f"{num})\t{name} - {email}"
+        subList = subList + user_entry + "\n\n"
+    return subList
+
+
 # Add new commands to the box.
-bot.add_command("/dosomething", "help for do something", do_something)
-bot.add_command("/sub", "I will ping you at a specified time", subscribe)
+bot.add_command("/me", "*", get_user_info)
+bot.add_command("/dosomething", "*", do_something)
 bot.add_command("/unsubscribe", "I will stop pinging you", unsubscribe)
-bot.add_command("/me", "your data", get_user_info)
+bot.add_command("/subscribe", "I will ping you at a specified time", subscribe)
+bot.add_command("/pingall", "*", ping_all_users)
+bot.add_command("/listsubs", "This will give you a list of all the people who will be pinged", list_subscribers)
 
 
 if __name__ == "__main__":
