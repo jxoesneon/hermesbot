@@ -1,4 +1,5 @@
 import os
+import dotenv
 import json
 import requests
 import webexteamsbot
@@ -13,9 +14,11 @@ baseurl = "https://api.ciscospark.com/v1"
 current_user = None
 
 # Retrieve required details from environment variables
+dotenv.load_dotenv()
 bot_email = os.getenv("TEAMS_BOT_EMAIL")
 teams_token = os.getenv("TEAMS_BOT_TOKEN")
 bot_url = os.getenv("TEAMS_BOT_URL")
+print(bot_url)
 bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
 
 # Create a Bot Object
@@ -63,27 +66,28 @@ def user_in_file():
         return False
 
 
-def update_file():
-    if user_in_file():
-        return "User already in file"
+def update_file(remove=False):
+    if remove:
+        if user_in_file():
+            stored_users = load_users(file=True)
+            stored_users["users"].pop(current_user["id"])
+            name = current_user["displayName"]
+            email = current_user["emails"][0]
+            write_to_file(stored_users)
+            return f"I have removed you {name} - {email}"
+        else:
+            return "You were not subscribed ..."
     else:
-        stored_users = load_users(file=True)
-        stored_users["users"][current_user["id"]] = current_user
-        write_to_file(stored_users)
-        user = current_user["displayName"]
-        return f"I've added you, {user}"
+        if user_in_file():
+            return "User already in file"
+        else:
+            stored_users = load_users(file=True)
+            stored_users["users"][current_user["id"]] = current_user
+            write_to_file(stored_users)
+            user = current_user["displayName"]
+            return f"I've added you, {user}"
 
 # ####### ######## ########
-
-
-# A simple command that returns a basic string that will be sent as a reply
-def do_something(incoming_msg):
-    """
-    Sample function to do some action.
-    :param incoming_msg: The incoming message object from Teams
-    :return: A text or markdown based reply
-    """
-    return f"I did what you said - {incoming_msg.text}"
 
 
 def get_info(personId):
@@ -165,7 +169,8 @@ def subscribe(incoming_msg):
 
 
 def unsubscribe(incoming_msg):
-    pass
+    get_user_info(incoming_msg)
+    return update_file(remove=True)
 
 
 def list_subscribers(_):
@@ -184,7 +189,6 @@ def list_subscribers(_):
 
 # Add new commands to the box.
 bot.add_command("/me", "*", get_user_info)
-bot.add_command("/dosomething", "*", do_something)
 bot.add_command("/unsubscribe", "I will stop pinging you", unsubscribe)
 bot.add_command("/subscribe", "I will ping you at a specified time", subscribe)
 bot.add_command("/pingall", "*", ping_all_users)
