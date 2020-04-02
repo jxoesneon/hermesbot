@@ -1,0 +1,119 @@
+{
+    "type": "AdaptiveCard",
+    "body": [
+        {
+            "type": "TextBlock",
+            "size": "medium",
+            "weight": "bolder",
+            "text": "HermesRCSS - Subscription"
+        },
+        {
+            "type": "TextBlock",
+            "text": "Please select the days and the times you want to be notified:",
+            "wrap": true
+        },
+        {
+            "type": "ColumnSet",
+            "columns": [
+                {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                        {
+                            "type": "Container",
+                            "items": [
+                                {
+                                    "type": "Input.Toggle",
+                                    "title": "Sunday",
+                                    "value": "false",
+                                    "wrap": false,
+                                    "id": "day0"
+                                },
+                                {
+                                    "type": "Input.Toggle",
+                                    "title": "Monday",
+                                    "value": "false",
+                                    "wrap": false,
+                                    "id": "day1"
+                                },
+                                {
+                                    "type": "Input.Toggle",
+                                    "title": "Tuesday",
+                                    "value": "false",
+                                    "wrap": false,
+                                    "id": "day2"
+                                },
+                                {
+                                    "type": "Input.Toggle",
+                                    "title": "Wednesday ",
+                                    "value": "false",
+                                    "wrap": false,
+                                    "id": "day3"
+                                },
+                                {
+                                    "type": "Input.Toggle",
+                                    "title": "Thursday ",
+                                    "value": "false",
+                                    "wrap": false,
+                                    "id": "day4"
+                                },
+                                {
+                                    "type": "Input.Toggle",
+                                    "title": "Friday",
+                                    "value": "false",
+                                    "wrap": false,
+                                    "id": "day5"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "Column",
+                    "width": "stretch",
+                    "items": [
+                        {
+                            "type": "Container",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "Shift Start:"
+                                },
+                                {
+                                    "type": "Input.Time",
+                                    "id": "shiftstart"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": "Shift End:"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Input.Time",
+                            "id": "shiftend"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Input.Toggle",
+            "title": "Saturday ",
+            "value": "false",
+            "wrap": false,
+            "id": "day6"
+        },
+        {
+            "type": "ActionSet",
+            "actions": [
+                {
+                    "type": "Action.Submit",
+                    "title": "Submit"
+                }
+            ]
+        }
+    ],
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.0"
+}
