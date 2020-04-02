@@ -12,6 +12,7 @@ webexteamsbot = "*"
 requests = "*"
 schedule = "*"
 apscheduler = "*"
+pyadaptivecards = "*"
 
 [requires]
 python_version = "3.8.2"
