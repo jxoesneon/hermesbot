@@ -1,0 +1,66 @@
+{
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "type": "AdaptiveCard",
+    "version": "1.0",
+    "speak": "<s>Your  meeting about \"Adaptive Card design session\"<break strength='weak'/> is starting at 12:30pm</s><s>Do you want to snooze <break strength='weak'/> or do you want to send a late notification to the attendees?</s>",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Hourly Check Notification",
+            "size": "large",
+            "weight": "bolder",
+            "horizontalAlignment": "center"
+        },
+        {
+            "type": "TextBlock",
+            "text": "Remember to send your email!",
+            "isSubtle": true
+        },
+        {
+            "type": "TextBlock",
+            "text": "12:00 AM",
+            "isSubtle": true,
+            "spacing": "None"
+        },
+        {
+            "type": "TextBlock",
+            "text": "Snooze for"
+        },
+        {
+            "type": "Input.ChoiceSet",
+            "id": "snooze",
+            "value": "5",
+            "choices": [
+                {
+                    "title": "5 minutes",
+                    "value": "5"
+                },
+                {
+                    "title": "10 minutes",
+                    "value": "10"
+                },
+                {
+                    "title": "15 minutes",
+                    "value": "15"
+                }
+            ]
+        }
+    ],
+    "actions": [
+        {
+            "type": "Action.Submit",
+            "title": "Snooze",
+            "data": {
+                "x": "snooze"
+            }
+        },
+        {
+            "type": "Action.Submit",
+            "title": "ACK",
+            "data": {
+                "x": "late"
+            },
+            "style": "positive"
+        }
+    ]
+}
