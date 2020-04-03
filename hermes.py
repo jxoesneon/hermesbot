@@ -2,20 +2,22 @@
 import json
 import os
 import pprint
+from datetime import datetime
+from os.path import split
 # Dev imports
 from pprint import pprint
 
 import dotenv
 import requests
 import webexteamsbot
-from pyngrok import ngrok
-from pyadaptivecards.card import *
-from pyadaptivecards.inputs import *
-from pyadaptivecards.actions import *
-from pyadaptivecards.container import *
-from pyadaptivecards.components import *
-from webexteamssdk import WebexTeamsAPI
 from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
+from pyadaptivecards.actions import *
+from pyadaptivecards.card import *
+from pyadaptivecards.components import *
+from pyadaptivecards.container import *
+from pyadaptivecards.inputs import *
+from pyngrok import ngrok
+from webexteamssdk import WebexTeamsAPI
 
 # Open a SSH tunnel
 # ssh_url = ngrok.connect(22, "tcp")
@@ -148,14 +150,37 @@ sched = Scheduler()
 sched.remove_all_jobs()
 sched.start()
 
+def get_hour_range(shift_start,shift_end):
+    hour_list = []
+    s_start_h, s_start_m = shift_start.split(":")
+    segmented = True if s_start_h<0 else False
+    if segmented:
+        pass
+    else:
+        pass
+    return hour_list
+
+def schedule_subscription():
+    stored_users = load_users()
+    for user in stored_users["users"]:
+        subscription = stored_users["users"][user]["subscription"]
+        shift_start = subscription["shiftstart"]
+        shift_end = subscription["shiftend"]
+        hour_range = get_hour_range(shift_start,shift_end)
+        
+        for day in subscription:
+            if subscription[day]:
+                day_num = day.split("day")[-1]
+                sched.add_job(ping_all, "cron", day=day_num)
+schedule_subscription()
 # Schedule ping times
-hours = []
-for h in range(21, 24):
-    hours.append(h)
-for h in range(6):
-    hours.append(h)
-for hour in hours:
-    sched.add_job(ping_all, "cron", hour=hour, minute=55)
+# hours = []
+# for h in range(21, 24):
+#     hours.append(h)
+# for h in range(6):
+#     hours.append(h)
+# for hour in hours:
+#     sched.add_job(ping_all, "cron", hour=hour, minute=55)
 # for minute in range(60):
 #     sched.add_job(ping_all, "cron", minute=minute)
 
