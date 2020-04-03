@@ -87,7 +87,12 @@ def user_in_file():
     else:
         return False
 
-def update_file(remove=False):
+def update_file(user=None, data=None, remove=False):
+    if user and data:
+        stored_users = load_users(file=True)
+        stored_users["users"][user]["subscription"] = data
+        write_to_file(stored_users)
+        return "Updated"
     if remove:
         if user_in_file():
             stored_users = load_users(file=True)
@@ -175,8 +180,8 @@ def list_subscribers(_):
         subList = subList + user_entry + "\n\n"
     return subList
 
-def remove_message():
-    pass
+def remove_message(message_id):
+    api.messages.delete(message_id)
 
 def remove_all_messages(incoming_msg):
     # List all the messages the bot and the user share
@@ -202,28 +207,30 @@ def days():
 
 # Create Subscription card
 def card_subscription():
-    user = current_user.displayName
-    # Title
-    title = TextBlock("Hello {user}, Let's set up your subscription!")
-    # Left Column
-    days_txt = TextBlock("please select the days you work:")
-    day_list = days()
-    title_cont = Container(title)
-    # Right Column
-    start_tile = TextBlock("Shift Start:")
-    shift_star = Time("shiftstart",)
-    end_tile = TextBlock("Shift Start:")
-    shift_end = Time("shiftend",)
-    # Bottom
-    submit = Submit(title="All set!")
-    # Aggregate all
-    row_cont1 = Column(items=[days_txt,*day_list])
-    row_cont2 = Column(items=[start_tile, shift_star,end_tile,shift_end])
-    body = ColumnSet(columns=[row_cont1, row_cont2])
-    body_cont = Container([title_cont,body])
-    card = AdaptiveCard(body=body_cont, actions=[submit])
-    card_json = card.to_json()
-    pprint(card_json)
+    # user = current_user.displayName
+    # # Title
+    # title = TextBlock("Hello {user}, Let's set up your subscription!")
+    # # Left Column
+    # days_txt = TextBlock("please select the days you work:")
+    # day_list = days()
+    # title_cont = Container(title)
+    # # Right Column
+    # start_tile = TextBlock("Shift Start:")
+    # shift_star = Time("shiftstart",)
+    # end_tile = TextBlock("Shift Start:")
+    # shift_end = Time("shiftend",)
+    # # Bottom
+    # submit = Submit(title="All set!")
+    # # Aggregate all
+    # row_cont1 = Column(items=[days_txt,*day_list])
+    # row_cont2 = Column(items=[start_tile, shift_star,end_tile,shift_end])
+    # body = ColumnSet(columns=[row_cont1, row_cont2])
+    # body_cont = Container([title_cont,body])
+    # card = AdaptiveCard(body=[body_cont], actions=[submit])
+    # card_json = card.to_json()
+    # pprint(card_json)
+    with open("subscription.json") as file:
+        card_json = json.load(file)
     return card_json
 
 def sub_card(incoming_msg):
@@ -246,8 +253,9 @@ def get_attachment_actions(attachmentid):
 # check attachmentActions:created webhook to handle any card actions
 def handle_cards(api, incoming_msg):
     m = get_attachment_actions(incoming_msg["data"]["id"])
-    print(m)
-
+    # Update people to notify file
+    update_file(user=m["personId"], data=m["inputs"])
+    remove_message(m["messageId"])
     return "Form received!"
 
 ######
