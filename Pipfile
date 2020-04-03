@@ -13,6 +13,7 @@ requests = "*"
 schedule = "*"
 apscheduler = "*"
 pyadaptivecards = "*"
+pyngrok = "*"
 
 [requires]
 python_version = "3.8.2"
