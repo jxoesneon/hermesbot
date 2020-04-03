@@ -1,16 +1,24 @@
-import os
+# Prod Imports
 import json
+import os
 import pprint
+# Dev imports
+from pprint import pprint
+
 import dotenv
 import requests
 import webexteamsbot
-from pprint import pprint
+from pyngrok import ngrok
+from pyadaptivecards.card import *
+from pyadaptivecards.inputs import *
+from pyadaptivecards.actions import *
+from pyadaptivecards.container import *
+from pyadaptivecards.components import *
 from webexteamssdk import WebexTeamsAPI
-from pyadaptivecards.actions import Submit
-from pyadaptivecards.card import AdaptiveCard
-from pyadaptivecards.inputs import Text, Number
-from pyadaptivecards.components import TextBlock
 from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
+
+# Open a SSH tunnel
+# ssh_url = ngrok.connect(22, "tcp")
 
 filepath = "peopletonotify.json"
 
@@ -20,22 +28,20 @@ current_user = None
 
 # Retrieve required details from environment variables
 dotenv.load_dotenv()
+# ----------- set up local http server -----------
+# Open a HTTP tunnel on the default port 80
+try:
+    bot_url = ngrok.connect(port=8080, proto="http")
+    print(bot_url)
+except Exception:
+    raise SystemExit
+
 bot_email = os.getenv("TEAMS_BOT_EMAIL")
 teams_token = os.getenv("TEAMS_BOT_TOKEN")
-bot_url = os.getenv("TEAMS_BOT_URL")
-print(bot_url)
 bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
 
 # Start API
 api = WebexTeamsAPI(access_token=teams_token)
-
-# webhook for cards
-# whook = api.webhooks.list()
-# print("\n\n\nThis are your hooks:")
-# for hook in whook:
-#     pprint(hook)
-chookurl = "https://api.ciscospark.com/v1/webhooks/incoming/Y2lzY29zcGFyazovL3VzL1dFQkhPT0svOTUxZjgxN2EtODczOS00ODI0LTk1MTgtMzNlNDM4OWQ5YTZj"
-cardhook = api.webhooks.create(name="cardhookname", targetUrl=chookurl, resource="attachmentActions", event="all")
 
 # Create a Bot Object
 bot = webexteamsbot.TeamsBot(bot_app_name,
@@ -169,11 +175,6 @@ def list_subscribers(_):
         subList = subList + user_entry + "\n\n"
     return subList
 
-def days(incoming_msg):
-    text = incoming_msg.text
-    text = text.split("/t ")[1]
-    return f"this is your text: \n\n'{text}'"
-
 def remove_message():
     pass
 
@@ -188,25 +189,73 @@ def remove_all_messages(incoming_msg):
             pass
 
 # Create Adaptive Cards
+# Create Days
+def days():
+    day = ["Sunday","Monday","Tuesday","Wednesday",
+                "Thursday","Friday","Saturday"]
+    dayid = [f"day{num}" for num in range(7)]
+    day_dict = dict(zip(dayid, day))
+    day_list = []
+    for d_id in day_dict:
+        day_list.append(Toggle(day_dict[d_id],d_id))
+    return day_list
+
 # Create Subscription card
 def card_subscription():
-    greeting = TextBlock("Hey hello there! I am a adaptive card")
-    first_name = Text('first_name', placeholder="First Name")
-    age = Number('age', placeholder="Age")
-    submit = Submit(title="Send me!")
-    card = AdaptiveCard(body=[greeting, first_name, age], actions=[submit])
-    # card_json = card.to_json(pretty=True)
-    return card
+    user = current_user.displayName
+    # Title
+    title = TextBlock("Hello {user}, Let's set up your subscription!")
+    # Left Column
+    days_txt = TextBlock("please select the days you work:")
+    day_list = days()
+    title_cont = Container(title)
+    # Right Column
+    start_tile = TextBlock("Shift Start:")
+    shift_star = Time("shiftstart",)
+    end_tile = TextBlock("Shift Start:")
+    shift_end = Time("shiftend",)
+    # Bottom
+    submit = Submit(title="All set!")
+    # Aggregate all
+    row_cont1 = Column(items=[days_txt,*day_list])
+    row_cont2 = Column(items=[start_tile, shift_star,end_tile,shift_end])
+    body = ColumnSet(columns=[row_cont1, row_cont2])
+    body_cont = Container([title_cont,body])
+    card = AdaptiveCard(body=body_cont, actions=[submit])
+    card_json = card.to_json()
+    pprint(card_json)
+    return card_json
 
 def sub_card(incoming_msg):
+    get_user_info(incoming_msg)
     user = incoming_msg.personId
     txt = "cardmsg"
-    attachment = {'contentType': 'application/vnd.microsoft.card.adaptive', 'content': card_subscription().to_dict()}
+    card = card_subscription()
+    attachment = {'contentType': 'application/vnd.microsoft.card.adaptive',
+                  'content': card}
     api.messages.create(toPersonId=user, text=txt, attachments=[attachment])
-    return  ""
+    return  None
+
+def get_attachment_actions(attachmentid):
+    headers = {'content-type': 'application/json; charset=utf-8',
+               'authorization': f'Bearer {teams_token}'}
+    url = f'{baseurl}/attachment/actions/{attachmentid}'
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+# check attachmentActions:created webhook to handle any card actions
+def handle_cards(api, incoming_msg):
+    m = get_attachment_actions(incoming_msg["data"]["id"])
+    print(m)
+
+    return "Form received!"
+
+######
+
 
 # Add new commands to the box.
 bot.add_command("/me", "*", get_user_info)
+bot.add_command('attachmentActions', '*', handle_cards)
 bot.add_command("/unsubscribe", "I will stop pinging you", unsubscribe)
 bot.add_command("/subscribe", "I will ping you at a specified time", subscribe)
 bot.add_command("/pingall", "*", ping_all_users)
