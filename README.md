@@ -2,15 +2,26 @@
 
 HermesRCSS is a notification bot intended to message you via the [Webex Teams](https://teams.webex.com) messaging client.
 
-<!-- ## Installation
+## Installation for developers
 
-Use the package manager [pip](https://pip.pypa.io/en/stable/) to install foobar.
+1. Clone this repository.
 
 ```bash
-pip install foobar
-``` -->
-
-## Usage
+git clone https://jxoesneon@bitbucket.org/joseeroj/hermesbot.git
+```
+2. Install pipenv to handle enviroment and requirements
+```bash
+pip install pipenv
+```
+3. Install all the requirements (include --dev to install development requirements)
+```bash
+pipenv install --dev
+```
+4. start the virtual enviroment
+```bash
+pipenv shell
+```
+## Usage for users
 
 - Log in to Webex Teams 
     - Via web at https://teams.webex.com
