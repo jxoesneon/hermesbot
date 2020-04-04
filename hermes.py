@@ -1,22 +1,34 @@
 # Prod Imports
-import json
 import os
-from datetime import datetime
-
-# Dev imports
-from pprint import pprint
-
-import dotenv
+import json
 import requests
 import webexteamsbot
-from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
-from pyadaptivecards.actions import *
-from pyadaptivecards.card import *
-from pyadaptivecards.components import *
-from pyadaptivecards.container import *
-from pyadaptivecards.inputs import *
 from pyngrok import ngrok
+# from datetime import datetime
 from webexteamssdk import WebexTeamsAPI
+from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
+
+# from pyadaptivecards.actions import *
+# from pyadaptivecards.card import *
+# from pyadaptivecards.components import *
+# from pyadaptivecards.container import *
+# from pyadaptivecards.inputs import *
+
+# Dev imports
+# from pprint import pprint
+import dotenv
+
+
+def clearscreen():
+    """Function to clear the screen
+
+    This function aims to clear the screen independently of the OS the script
+    is being run on.
+    """
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+
+clearscreen()
 
 
 # Define where to find the users file
@@ -37,6 +49,7 @@ try:
     bot_url = ngrok.connect(port=8080, proto="http")
     print(bot_url)
 except Exception:
+    clearscreen()
     print("You need to close the current terminal, otherwise the HTTP tunnel wont connect")
     input("Press enter to exit.\n")
     raise SystemExit
@@ -55,9 +68,9 @@ bot = webexteamsbot.TeamsBot(bot_app_name,
                              teams_bot_url=bot_url,
                              teams_bot_email=bot_email,
                              webhook_resource_event=[{"resource": "messages",
-                                                      "event": "created"}, # Handles Messages
+                                                      "event": "created"},  # Handles Messages
                                                      {"resource": "attachmentActions",
-                                                      "event": "created"}]) # Handles Adaptive cards
+                                                      "event": "created"}])  # Handles Adaptive cards
 
 
 # --------- File Management ---------
@@ -179,17 +192,17 @@ def update_file(user=None, data=None, remove=False):
 
 def get_user_info(incoming_msg):
     """Sets the curren_user global variable using id of the incomming message.
-    
+
     Uses the personId from the incomming message to gather the user data by making an API call,
     then it sets the global current_user variable.
     Should be called before any actions that require the current_user variable to ensure it is populated.
-    
+
     Args:
         incoming_msg (Message): Message data received by the API.
-    
+
     Returns:
         str: A string containing all the user data gathered.
-    """    
+    """
     personId = incoming_msg.personId
     global current_user
     current_user = api.people.get(personId)
@@ -198,26 +211,35 @@ def get_user_info(incoming_msg):
 
 def ping_single_user(user, message="Hi", time=None):
     """Send a message to a user.
-    
+
     Uses the required personId to send a direct message to that user.
-    
+
     Args:
-        user ([type]): [description]
-        message ([type], optional): [description]. Defaults to "hi".
-        time ([type], optional): [description]. Defaults to None.
-    """    
+        user (personId): Id of the user who will be messaged.
+        message (str, optional): Message to send the user. Defaults to "hi".
+        time (tuple, optional): Time in (hour, minute) format for when the user should be pinged. Defaults to None.
+    """
     if time:
-        pass
+        hour, minute = time
+        m_args = f"toPersonId={user}, text={message}"
+        sched.add_job(api.messages.create, "cron", hour=hour, minute=minute, kwargs=m_args)
     else:
         api.messages.create(toPersonId=user, text=message)
 
 
-def ping_all():
+def ping_all(message=None):
+    """Ping all users in the users data file.
+    
+    Iters through the list of users and sends them a message
+    
+    Args:
+        message (str, optional): Message to send all users. Defaults to None.
+    """     
     users_to_ping = load_users(file=True)["users"]
     for user in users_to_ping:
         user_info = users_to_ping[user]
         name = user_info["displayName"]
-        message = f"Hello {name}, remember to send the hourly email!"
+        message = message if message else f"Hello {name}, remember to send the hourly email!" 
         ping_single_user(user, message)
 
 
@@ -242,11 +264,11 @@ def get_hour_range(shift_start, shift_end):
     s_start_h, s_start_m = shift_start.split(":")
     s_end_h, s_end_m = shift_start.split(":")
     segmented = True if int(s_start_h) < 0 else False
-    # if segmented:
-    #     pass
-    # else:
-    #     for hour in range(s_start_h, s_end_h):
-    #         pass
+    if segmented:
+        pass
+    else:
+        for hour in range(int(s_start_h), int(s_end_h)):
+            pass
     return hour_list
 
 
@@ -261,13 +283,13 @@ def schedule_subscription():
         for day in subscription:
             if subscription[day]:
                 day_num = day.split("day")[-1]
-                invalid = ["shiftstart","shiftend"]
+                invalid = ["shiftstart", "shiftend"]
                 if day_num not in invalid:
                     for f_hour, f_min in hour_range:
                         sched.add_job(ping_all, "cron",
                                       day_of_week=day_num,
                                       hour=f_hour,
-                                      minute=f_minute,
+                                      minute=f_min,
                                       misfire_grace_time=9000)
 
 
@@ -327,15 +349,15 @@ def remove_all_messages(incoming_msg):
 
 # Create Adaptive Cards
 # Create Days
-def days():
-    day = ["Sunday", "Monday", "Tuesday", "Wednesday",
-           "Thursday", "Friday", "Saturday"]
-    dayid = [f"day{num}" for num in range(7)]
-    day_dict = dict(zip(dayid, day))
-    day_list = []
-    for d_id in day_dict:
-        day_list.append(Toggle(day_dict[d_id], d_id))
-    return day_list
+# def days():
+#     day = ["Sunday", "Monday", "Tuesday", "Wednesday",
+#            "Thursday", "Friday", "Saturday"]
+#     dayid = [f"day{num}" for num in range(7)]
+#     day_dict = dict(zip(dayid, day))
+#     day_list = []
+#     for d_id in day_dict:
+#         day_list.append(Toggle(day_dict[d_id], d_id))
+#     return day_list
 
 
 # Create Subscription card
@@ -404,7 +426,7 @@ bot.add_command("/unsubscribe", "I will stop pinging you", unsubscribe)
 bot.add_command("/subscribe", "I will ping you at a specified time", subscribe)
 bot.add_command("/pingall", "*", ping_all_users)
 bot.add_command("/listsubs", "This will give you a list of all the people who will be pinged", list_subscribers)
-bot.add_command("/t", "test", days)
+# bot.add_command("/t", "test", days)
 bot.add_command("/card", "sends sub card", sub_card)
 bot.add_command("/clean", "Removes all the meessages in the conversation", remove_all_messages)
 
