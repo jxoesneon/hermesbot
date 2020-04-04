@@ -1,9 +1,8 @@
 # Prod Imports
 import json
 import os
-import pprint
 from datetime import datetime
-from os.path import split
+
 # Dev imports
 from pprint import pprint
 
@@ -19,25 +18,30 @@ from pyadaptivecards.inputs import *
 from pyngrok import ngrok
 from webexteamssdk import WebexTeamsAPI
 
-# Open a SSH tunnel
-# ssh_url = ngrok.connect(22, "tcp")
 
+# Define where to find the users file
 filepath = "peopletonotify.json"
 
 # API vars
 baseurl = "https://api.ciscospark.com/v1"
+
+# Define current interacting user
 current_user = None
 
 # Retrieve required details from environment variables
 dotenv.load_dotenv()
+
 # ----------- set up local http server -----------
 # Open a HTTP tunnel on the default port 80
 try:
     bot_url = ngrok.connect(port=8080, proto="http")
     print(bot_url)
 except Exception:
+    print("You need to close the current terminal, otherwise the HTTP tunnel wont connect")
+    input("Press enter to exit.\n")
     raise SystemExit
 
+# Get enviroment details
 bot_email = os.getenv("TEAMS_BOT_EMAIL")
 teams_token = os.getenv("TEAMS_BOT_TOKEN")
 bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
@@ -45,22 +49,37 @@ bot_app_name = os.getenv("TEAMS_BOT_APP_NAME")
 # Start API
 api = WebexTeamsAPI(access_token=teams_token)
 
-# Create a Bot Object
+# Create the Bot Object
 bot = webexteamsbot.TeamsBot(bot_app_name,
                              teams_bot_token=teams_token,
                              teams_bot_url=bot_url,
                              teams_bot_email=bot_email,
                              webhook_resource_event=[{"resource": "messages",
-                                                      "event": "created"},
+                                                      "event": "created"}, # Handles Messages
                                                      {"resource": "attachmentActions",
-                                                      "event": "created"}])
+                                                      "event": "created"}]) # Handles Adaptive cards
+
 
 # --------- File Management ---------
-def write_to_file(data):
+def write_to_file(data, filepath=filepath):
+    """Write data to a file
+
+    Simple function to write string data to a file in Json format.
+
+    Args:
+        data (str): A string containing the data to be written to a file
+        filepath (str, optional): String containing the relative or full path to the file the data is going to be written to. Defaults to filepath.
+    """
     with open(filepath, "w+") as file:
         json.dump(data, file, sort_keys=True, indent=4, separators=(',', ': '))
 
+
 def check_user_file():
+    """Check if the user file exist
+
+    Sanity check to see if the users file already exists.
+    If there is no users file then it proceeds to create it.
+    """
     try:
         with open(filepath, "r+") as file:
             _ = len(json.load(file))
@@ -71,7 +90,18 @@ def check_user_file():
         write_to_file({"users": {current_user["id"]: current_user}})
         print("done")
 
+
 def load_users(file=False):
+    """Loads the user data in the user file.
+
+    Returns the user data as a list of personId by default or the whole user data block if the file option is set to true.
+
+    Args:
+        file (bool, optional): If True, it returns the file data instead of just the personId list. Defaults to False.
+
+    Returns:
+        str: String containing either a list of personIds or the whole user data set.
+    """
     check_user_file()
     id_list = []
     with open(filepath, "r") as file:
@@ -82,14 +112,44 @@ def load_users(file=False):
     else:
         return id_list
 
+
 def user_in_file():
+    """Check if the current user is in the users data file
+
+    Uses the current_user's personId to see if the user has been already added to the user data file.
+
+    Returns:
+        bool: True if the current user is in the user data file, False if not.
+    """
     stored_users = load_users()
-    if current_user.id in stored_users["users"]:
-        return True
-    else:
-        return False
+    return True if current_user.id in stored_users["users"] else False
+
 
 def update_file(user=None, data=None, remove=False):
+    """Update the users file with new data
+
+    Allows to add or remove a user from the users file.
+    By default it uses the global current_user to check if the user is in the users file and adds it if not.
+    If a custom data set is to be added a personId must be passed to the user arg, as well as a data dict, if either are missing it will not update.
+
+    Usage:
+        To add the current user:
+            update_file()
+
+        To remove the current user:
+            update_file(remove=True)
+
+        To add custom data to a user:
+            update_file(user=personId, data=dict)
+
+    Args:
+        user (personId, optional): A string containig the personId to change/add. Defaults to None.
+        data (str, optional): A string containing the data to add to the user. Defaults to None.
+        remove (bool, optional): If true removes the current user from the users data file. Defaults to False.
+
+    Returns:
+        str: A string informing of the action taken, either updated, created or removed.
+    """
     if user and data:
         stored_users = load_users(file=True)
         stored_users["users"][user]["subscription"] = data
@@ -116,17 +176,41 @@ def update_file(user=None, data=None, remove=False):
             return f"I've added you, {user}"
 # ####### ######## ########
 
+
 def get_user_info(incoming_msg):
+    """Sets the curren_user global variable using id of the incomming message.
+    
+    Uses the personId from the incomming message to gather the user data by making an API call,
+    then it sets the global current_user variable.
+    Should be called before any actions that require the current_user variable to ensure it is populated.
+    
+    Args:
+        incoming_msg (Message): Message data received by the API.
+    
+    Returns:
+        str: A string containing all the user data gathered.
+    """    
     personId = incoming_msg.personId
     global current_user
     current_user = api.people.get(personId)
     return str(current_user)
 
-def ping_single_user(user, message=None, time=None):
+
+def ping_single_user(user, message="Hi", time=None):
+    """Send a message to a user.
+    
+    Uses the required personId to send a direct message to that user.
+    
+    Args:
+        user ([type]): [description]
+        message ([type], optional): [description]. Defaults to "hi".
+        time ([type], optional): [description]. Defaults to None.
+    """    
     if time:
         pass
     else:
         api.messages.create(toPersonId=user, text=message)
+
 
 def ping_all():
     users_to_ping = load_users(file=True)["users"]
@@ -135,6 +219,7 @@ def ping_all():
         name = user_info["displayName"]
         message = f"Hello {name}, remember to send the hourly email!"
         ping_single_user(user, message)
+
 
 def ping_all_users(incoming_msg):
     message = f"Broadcast message requestesd by {incoming_msg.personEmail}"
@@ -145,20 +230,25 @@ def ping_all_users(incoming_msg):
         responses.append(user)
     return f"Ping sent to {len(users_to_ping)} users."
 
+
 # Start the scheduler
 sched = Scheduler()
 sched.remove_all_jobs()
 sched.start()
 
-def get_hour_range(shift_start,shift_end):
+
+def get_hour_range(shift_start, shift_end):
     hour_list = []
     s_start_h, s_start_m = shift_start.split(":")
-    segmented = True if s_start_h<0 else False
-    if segmented:
-        pass
-    else:
-        pass
+    s_end_h, s_end_m = shift_start.split(":")
+    segmented = True if int(s_start_h) < 0 else False
+    # if segmented:
+    #     pass
+    # else:
+    #     for hour in range(s_start_h, s_end_h):
+    #         pass
     return hour_list
+
 
 def schedule_subscription():
     stored_users = load_users()
@@ -166,13 +256,24 @@ def schedule_subscription():
         subscription = stored_users["users"][user]["subscription"]
         shift_start = subscription["shiftstart"]
         shift_end = subscription["shiftend"]
-        hour_range = get_hour_range(shift_start,shift_end)
-        
+        hour_range = get_hour_range(shift_start, shift_end)
+
         for day in subscription:
             if subscription[day]:
                 day_num = day.split("day")[-1]
-                sched.add_job(ping_all, "cron", day=day_num)
+                invalid = ["shiftstart","shiftend"]
+                if day_num not in invalid:
+                    for f_hour, f_min in hour_range:
+                        sched.add_job(ping_all, "cron",
+                                      day_of_week=day_num,
+                                      hour=f_hour,
+                                      minute=f_minute,
+                                      misfire_grace_time=9000)
+
+
 schedule_subscription()
+
+
 # Schedule ping times
 # hours = []
 # for h in range(21, 24):
@@ -184,13 +285,16 @@ schedule_subscription()
 # for minute in range(60):
 #     sched.add_job(ping_all, "cron", minute=minute)
 
+
 def subscribe(incoming_msg):
     get_user_info(incoming_msg)
     return update_file()
 
+
 def unsubscribe(incoming_msg):
     get_user_info(incoming_msg)
     return update_file(remove=True)
+
 
 def list_subscribers(_):
     subscribers = load_users()
@@ -205,8 +309,10 @@ def list_subscribers(_):
         subList = subList + user_entry + "\n\n"
     return subList
 
+
 def remove_message(message_id):
     api.messages.delete(message_id)
+
 
 def remove_all_messages(incoming_msg):
     # List all the messages the bot and the user share
@@ -218,17 +324,19 @@ def remove_all_messages(incoming_msg):
         except Exception:
             pass
 
+
 # Create Adaptive Cards
 # Create Days
 def days():
-    day = ["Sunday","Monday","Tuesday","Wednesday",
-                "Thursday","Friday","Saturday"]
+    day = ["Sunday", "Monday", "Tuesday", "Wednesday",
+           "Thursday", "Friday", "Saturday"]
     dayid = [f"day{num}" for num in range(7)]
     day_dict = dict(zip(dayid, day))
     day_list = []
     for d_id in day_dict:
-        day_list.append(Toggle(day_dict[d_id],d_id))
+        day_list.append(Toggle(day_dict[d_id], d_id))
     return day_list
+
 
 # Create Subscription card
 def card_subscription():
@@ -258,6 +366,7 @@ def card_subscription():
         card_json = json.load(file)
     return card_json
 
+
 def sub_card(incoming_msg):
     get_user_info(incoming_msg)
     user = incoming_msg.personId
@@ -266,7 +375,8 @@ def sub_card(incoming_msg):
     attachment = {'contentType': 'application/vnd.microsoft.card.adaptive',
                   'content': card}
     api.messages.create(toPersonId=user, text=txt, attachments=[attachment])
-    return  None
+    return None
+
 
 def get_attachment_actions(attachmentid):
     headers = {'content-type': 'application/json; charset=utf-8',
@@ -274,6 +384,7 @@ def get_attachment_actions(attachmentid):
     url = f'{baseurl}/attachment/actions/{attachmentid}'
     response = requests.get(url, headers=headers)
     return response.json()
+
 
 # check attachmentActions:created webhook to handle any card actions
 def handle_cards(api, incoming_msg):
