@@ -164,28 +164,6 @@
             "status": "active",
             "type": "person"
         },
-        "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9iMjE4Y2RiNy1hOTVlLTQ1OWYtYTMyNi1kN2Y5ZTAzNDE2MjA": {
-            "avatar": "https://avatar-prod-us-east-2.webexcontent.com/Avtr~V1~1eb65fdf-9643-417f-9974-ad72cae0e10f/V1~b218cdb7-a95e-459f-a326-d7f9e0341620~c346b398ee0d4f199c6c60ad2c22834a~1600",
-            "created": "2019-05-16T02:08:23.364Z",
-            "displayName": "Jonathan Josue Ramirez Torres",
-            "emails": [
-                "jonathra@cisco.com"
-            ],
-            "firstName": "Jonathan Josue",
-            "id": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9iMjE4Y2RiNy1hOTVlLTQ1OWYtYTMyNi1kN2Y5ZTAzNDE2MjA",
-            "lastActivity": "2020-03-30T07:10:49.477Z",
-            "lastName": "Ramirez Torres",
-            "nickName": "Jonathan Josue",
-            "orgId": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi8xZWI2NWZkZi05NjQzLTQxN2YtOTk3NC1hZDcyY2FlMGUxMGY",
-            "phoneNumbers": [
-                {
-                    "type": "work",
-                    "value": "+1 919 993 9384"
-                }
-            ],
-            "status": "active",
-            "type": "person"
-        },
         "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9iNWE1YjdkMC1kMjZkLTQyY2UtOWZmMy01Y2UxYzk2MDA2Zjg": {
             "avatar": "https://avatar-prod-us-east-2.webexcontent.com/Avtr~V1~1eb65fdf-9643-417f-9974-ad72cae0e10f/V1~b5a5b7d0-d26d-42ce-9ff3-5ce1c96006f8~7016ded1118f4030985568a94d9dc124~1600",
             "created": "2019-11-29T01:20:19.844Z",
