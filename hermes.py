@@ -4,7 +4,7 @@ import os
 import datetime
 
 # Dev imports
-# from pprint import pprint
+from pprint import pprint
 import dotenv
 import requests
 import webexteamsbot
@@ -264,10 +264,18 @@ def get_hour_range(shift_start, shift_end):
     hour_list = []
     s_start = datetime.datetime.strptime(shift_start, "%H:%M").time()
     s_end = datetime.datetime.strptime(shift_end, "%H:%M",).time()
-    t_delta = datetime.time(1)
+    add_start = True
     while s_start.hour != s_end.hour:
+        # Add shift start
+        if add_start:
+            hour_list.append(((s_start.hour - 1),55))
+            add_start = False
         hour_list.append((s_start.hour, 55))
-        print(s_start + t_delta)
+        if s_start.hour < 23:
+            s_start = datetime.time((s_start.hour + 1))
+        else:
+            s_start = datetime.time(0)
+            
     return hour_list
 
 
@@ -293,6 +301,8 @@ def schedule_subscription():
 
 
 schedule_subscription()
+
+pprint(sched.get_jobs())
 
 
 # Schedule ping times
