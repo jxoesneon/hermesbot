@@ -3,8 +3,8 @@
     "body": [
         {
             "type": "TextBlock",
-            "size": "medium",
-            "weight": "bolder",
+            "size": "Medium",
+            "weight": "Bolder",
             "text": "HermesRCSS - Subscription"
         },
         {
@@ -109,11 +109,16 @@
             "actions": [
                 {
                     "type": "Action.Submit",
-                    "title": "Submit"
+                    "title": "Submit",
+                    "id": "subscription"
                 }
             ]
         }
     ],
     "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-    "version": "1.0"
+    "version": "1.0",
+    "id": "subscription_card",
+    "lang": "en",
+    "speak": "Please enter your subscription information",
+    "minHeight": "0px"
 }

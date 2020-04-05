@@ -20,7 +20,6 @@ from webexteamssdk import WebexTeamsAPI
 # from pyadaptivecards.inputs import *
 
 
-
 def clearscreen():
     """Function to clear the screen
 
@@ -231,17 +230,17 @@ def ping_single_user(user, message="Hi", time=None):
 
 def ping_all(message=None):
     """Ping all users in the users data file.
-    
+
     Iters through the list of users and sends them a message
-    
+
     Args:
         message (str, optional): Message to send all users. Defaults to None.
-    """     
+    """
     users_to_ping = load_users(file=True)["users"]
     for user in users_to_ping:
         user_info = users_to_ping[user]
         name = user_info["displayName"]
-        message = message if message else f"Hello {name}, remember to send the hourly email!" 
+        message = message if message else f"Hello {name}, remember to send the hourly email!"
         ping_single_user(user, message)
 
 
@@ -265,11 +264,10 @@ def get_hour_range(shift_start, shift_end):
     hour_list = []
     s_start = datetime.datetime.strptime(shift_start, "%H:%M").time()
     s_end = datetime.datetime.strptime(shift_end, "%H:%M",).time()
-    t_delta = int(s_end.hour) - int(s_start.hour)
-    print(t_delta)
-    for hour in range(t_delta):
-        print(hour)
-        hour_list.append(hour)
+    t_delta = datetime.time(1)
+    while s_start.hour != s_end.hour:
+        hour_list.append((s_start.hour, 55))
+        print(s_start + t_delta)
     return hour_list
 
 
@@ -411,10 +409,10 @@ def get_attachment_actions(attachmentid):
 
 # check attachmentActions:created webhook to handle any card actions
 def handle_cards(api, incoming_msg):
-    m = get_attachment_actions(incoming_msg["data"]["id"])
+    message = get_attachment_actions(incoming_msg["data"]["id"])
     # Update people to notify file
-    update_file(user=m["personId"], data=m["inputs"])
-    remove_message(m["messageId"])
+    update_file(user=message["personId"], data=message["inputs"])
+    remove_message(message["messageId"])
     return "Form received!"
 
 ######
