@@ -26,10 +26,10 @@
                 "day2": "true",
                 "day3": "true",
                 "day4": "true",
-                "day5": "false",
+                "day5": "true",
                 "day6": "false",
-                "shiftend": "06:00",
-                "shiftstart": "00:00"
+                "shiftend": "04:00",
+                "shiftstart": "22:00"
             },
             "type": "person"
         }
