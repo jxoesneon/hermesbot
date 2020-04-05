@@ -1,12 +1,17 @@
 # Prod Imports
-import os
 import json
+import os
+import datetime
+
+# Dev imports
+# from pprint import pprint
+import dotenv
 import requests
 import webexteamsbot
+from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
 from pyngrok import ngrok
 # from datetime import datetime
 from webexteamssdk import WebexTeamsAPI
-from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
 
 # from pyadaptivecards.actions import *
 # from pyadaptivecards.card import *
@@ -14,9 +19,6 @@ from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
 # from pyadaptivecards.container import *
 # from pyadaptivecards.inputs import *
 
-# Dev imports
-# from pprint import pprint
-import dotenv
 
 
 def clearscreen():
@@ -261,14 +263,13 @@ sched.start()
 
 def get_hour_range(shift_start, shift_end):
     hour_list = []
-    s_start_h, s_start_m = shift_start.split(":")
-    s_end_h, s_end_m = shift_start.split(":")
-    segmented = True if int(s_start_h) < 0 else False
-    if segmented:
-        pass
-    else:
-        for hour in range(int(s_start_h), int(s_end_h)):
-            pass
+    s_start = datetime.datetime.strptime(shift_start, "%H:%M").time()
+    s_end = datetime.datetime.strptime(shift_end, "%H:%M",).time()
+    t_delta = int(s_end.hour) - int(s_start.hour)
+    print(t_delta)
+    for hour in range(t_delta):
+        print(hour)
+        hour_list.append(hour)
     return hour_list
 
 
