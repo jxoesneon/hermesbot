@@ -38,12 +38,13 @@ class Hermess():
                                                                    "event": "created"}])  # Handles Adaptive cards
         self.bot.set_help_message("Hello, my name is Hermes! You can use the following commands:\n")
         self.add_commands()
-        self.bot.run(host="localhost", port=8080)  # Run Bot
         self.clearscreen()
         self.init_users_file()
         self.sched = Scheduler()
         self.sched.remove_all_jobs()
         self.sched.start()  # Start the scheduler
+        self.schedule_subscription()
+        self.bot.run(host="localhost", port=8080)  # Run Bot
 
     def clearscreen(self):
         """Function to clear the screen
@@ -83,7 +84,7 @@ class Hermess():
             data (str): A string containing the data to be written to a file
             filepath (str, optional): String containing the relative or full path to the file the data is going to be written to. Defaults to filepath.
         """
-        with open(filepath, "w+") as file:
+        with open(self.filepath, "w+") as file:
             json.dump(data, file, sort_keys=True, indent=4, separators=(",", ": "))
 
     def get_user_info(self, incoming_msg):
@@ -116,10 +117,10 @@ class Hermess():
             print("The file has not been initialized",
                   "initializing ...",
                   sep="\n")
-            self.write_to_file({"users": {self.current_user["id"]: self.current_user}})
+            self.write_to_file({"users": {self.current_user.id: self.current_user.to_dict()}})
             print("done")
-        except Exception as e:
-            pprint(e)
+        except json.JSONDecodeError:
+            return {}
 
     def load_users(self, file=False):
         """Loads the user data in the user file.
@@ -134,13 +135,16 @@ class Hermess():
         """
         self.check_user_file()
         id_list = []
-        with open(self.filepath, "r") as file:
-            data = json.load(file)
-        id_list.append(list(data["users"]))
-        if file:
-            return data
-        else:
-            return id_list
+        try:
+            with open(self.filepath, "r") as file:
+                data = json.load(file)
+            id_list.append(list(data["users"]))
+            if file:
+                return data
+            else:
+                return id_list
+        except json.JSONDecodeError:
+            return {}
 
     def user_in_file(self):
         """Check if the current user is in the users data file
@@ -180,19 +184,22 @@ class Hermess():
         """
         if user and data:
             stored_users = self.load_users(file=True)
-            # Check if user in stored users
-            if user in stored_users["users"]:
-                stored_users["users"][user]["subscription"] = data
+            if ("users" in stored_users) and (stored_users["users"]):
+                # Check if user in stored users
+                if user in stored_users["users"]:
+                    stored_users["users"][user]["subscription"] = data
+                else:
+                    raise ValueError("User not found")
             else:
-                raise ValueError("User not found")
+                stored_users = {"users": {user: data}}
             self.write_to_file(stored_users)
             return "Updated"
         elif remove:
             if self.user_in_file():
                 stored_users = self.load_users(file=True)
-                stored_users["users"].pop(self.current_user["id"])
-                name = self.current_user["displayName"]
-                email = self.current_user["emails"][0]
+                stored_users["users"].pop(self.current_user.id)
+                name = self.current_user.displayName
+                email = self.current_user.emails[0]
                 self.write_to_file(stored_users)
                 return f"I have removed you {name} - {email}"
             else:
@@ -224,8 +231,8 @@ class Hermess():
     # --------- Subscriptions --------- #
     def subscribe(self, incoming_msg):
         self.get_user_info(incoming_msg)
-        self.update_file()
-        self.sub_card(incoming_msg.personId)
+        self.update_file(user=self.current_user.id, data=self.current_user.to_dict())
+        self.subscription_card(self.current_user.id)
         return "Please fill out the subscription form."
 
     def unsubscribe(self, incoming_msg):
@@ -245,7 +252,8 @@ class Hermess():
         message = self.get_attachment_actions(incoming_msg["data"]["id"])
         # Update people to notify file
         self.update_file(user=message["personId"], data=message["inputs"])
-        self.remove_message(message["messageId"])
+        self.remove_messages(incoming_msg, messageId=message["messageId"])
+        self.update_schedules()
         return "Form received!"
 
     # --------- User Functions --------- #
@@ -273,16 +281,21 @@ class Hermess():
             responses.append(user)
         return f"Ping sent to {len(users_to_ping)} users."
 
-    def remove_all_messages(self, incoming_msg):
-        # List all the messages the bot and the user share
-        messages_with_user = self.api.messages.list(roomId=incoming_msg.roomId)
-        pprint(messages_with_user)
-        for message in messages_with_user:
-            # Delete the messages
+    def remove_messages(self, incoming_msg, messageId=None):
+        if messageId:
             try:
-                self.api.messages.delete(message.id)
-            except Exception:
-                pass
+                self.api.messages.delete(messageId)
+            except Exception as e:
+                pprint(e)
+        else:
+            # List all the messages the bot and the user share
+            messages_with_user = self.api.messages.list(roomId=incoming_msg.roomId)
+            for message in messages_with_user:
+                # Delete the messages
+                try:
+                    self.api.messages.delete(message.id)
+                except Exception:
+                    pass
 
     def list_subscribers(self, _):
         subscribers = self.load_users()
@@ -306,7 +319,10 @@ class Hermess():
         while s_start.hour != s_end.hour:
             # Add shift start
             if add_start:
-                hour_list.append(((s_start.hour - 1), 55))
+                if s_start.hour == 0:
+                    hour_list.append((23, 55))
+                else:
+                    hour_list.append(((s_start.hour - 1), 55))
                 add_start = False
             hour_list.append((s_start.hour, 55))
             if s_start.hour < 23:
@@ -316,23 +332,38 @@ class Hermess():
         return hour_list
 
     def schedule_subscription(self):
+        self.check_user_file()
         stored_users = self.load_users()
-        for user in stored_users["users"]:
-            subscription = stored_users["users"][user]["subscription"]
-            shift_start = subscription["shiftstart"]
-            shift_end = subscription["shiftend"]
-            hour_range = self.get_hour_range(shift_start, shift_end)
-            for day in subscription:
-                if subscription[day]:
-                    day_num = day.split("day")[-1]
-                    invalid = ["shiftstart", "shiftend"]
-                    if day_num not in invalid:
-                        for f_hour, f_min in hour_range:
-                            self.sched.add_job(self.ping_all, "cron",
-                                               day_of_week=day_num,
-                                               hour=f_hour,
-                                               minute=f_min,
-                                               misfire_grace_time=9000)
+        if stored_users:
+            for user in stored_users["users"]:
+                subscription = stored_users["users"][user]["subscription"]
+                shift_start = subscription["shiftstart"]
+                shift_end = subscription["shiftend"]
+                hour_range = self.get_hour_range(shift_start, shift_end)
+                for day in subscription:
+                    if subscription[day]:
+                        day_num = day.split("day")[-1]
+                        invalid = ["shiftstart", "shiftend"]
+                        if day_num not in invalid:
+                            for f_hour, f_min in hour_range:
+                                self.sched.add_job(self.ping_all, "cron",
+                                                   day_of_week=day_num,
+                                                   hour=f_hour,
+                                                   minute=f_min,
+                                                   misfire_grace_time=9000)
+        else:
+            pass
+
+    def update_schedules(self):
+        self.sched.remove_all_jobs()
+        self.schedule_subscription()
+
+    def list_schedules(self, _):
+        list_of_schedules = self.sched.get_jobs()
+        sched_str = ""
+        for job in list_of_schedules:
+            sched_str = sched_str + str(job)
+        return sched_str
 
     # --------- Bot --------- #
     def add_commands(self):
@@ -342,8 +373,8 @@ class Hermess():
         self.bot.add_command("/subscribe", "I will ping you at a specified time", self.subscribe)
         self.bot.add_command("/pingall", "*", self.ping_all_users)
         self.bot.add_command("/listsubs", "This will give you a list of all the people who will be pinged", self.list_subscribers)
-        self.bot.add_command("/card", "sends sub card", self.subscription_card)
-        self.bot.add_command("/clean", "Removes all the meessages in the conversation", self.remove_all_messages)
+        self.bot.add_command("/clean", "Removes all the meessages in the conversation", self.remove_messages)
+        self.bot.add_command("/schedules", "shows a list of all scheduled alarms", self.list_schedules)
 
 
 if __name__ == "__main__":
