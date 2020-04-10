@@ -267,9 +267,7 @@ class Hermess():
         """
         users_to_ping = self.load_users(file=True)["users"]
         for user in users_to_ping:
-            user_info = users_to_ping[user]
-            name = user_info["displayName"]
-            message = message if message else f"Hello {name}, remember to send the hourly email!"
+            message = message if message else f"Hello, remember to send the hourly email!"
             self.api.messages.create(toPersonId=user, text=message)
 
     def ping_all_users(self, incoming_msg):
@@ -336,21 +334,24 @@ class Hermess():
         stored_users = self.load_users()
         if stored_users:
             for user in stored_users["users"]:
-                subscription = stored_users["users"][user]["subscription"]
-                shift_start = subscription["shiftstart"]
-                shift_end = subscription["shiftend"]
-                hour_range = self.get_hour_range(shift_start, shift_end)
-                for day in subscription:
-                    if subscription[day]:
-                        day_num = day.split("day")[-1]
-                        invalid = ["shiftstart", "shiftend"]
-                        if day_num not in invalid:
-                            for f_hour, f_min in hour_range:
-                                self.sched.add_job(self.ping_all, "cron",
-                                                   day_of_week=day_num,
-                                                   hour=f_hour,
-                                                   minute=f_min,
-                                                   misfire_grace_time=9000)
+                if "subscription" in stored_users["users"][user]:
+                    subscription = stored_users["users"][user]["subscription"]
+                    shift_start = subscription["shiftstart"]
+                    shift_end = subscription["shiftend"]
+                    hour_range = self.get_hour_range(shift_start, shift_end)
+                    for day in subscription:
+                        if subscription[day]:
+                            day_num = day.split("day")[-1]
+                            invalid = ["shiftstart", "shiftend"]
+                            name = stored_users["users"][user]["nickName"].split(" ")[0] if "nickName" in stored_users["users"][user] else stored_users["users"][user]["firstName"]
+                            if day_num not in invalid:
+                                for f_hour, f_min in hour_range:
+                                    self.sched.add_job(self.ping_all, "cron",
+                                                       kwargs={"message": f"Hello {name}, remember to send the hourly email!"},
+                                                       day_of_week=day_num,
+                                                       hour=f_hour,
+                                                       minute=f_min,
+                                                       misfire_grace_time=9000)
         else:
             pass
 
