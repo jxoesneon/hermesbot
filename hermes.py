@@ -38,15 +38,16 @@ class Hermess():
                                                                    "event": "created"}])  # Handles Adaptive cards
         self.bot.set_help_message("Hello, my name is Hermes! You can use the following commands:\n")
         self.add_commands()
-        self.clearscreen()
+        self.clear_screen()
         self.init_users_file()
-        self.sched = Scheduler()
+        # Create the scheduler
+        self.sched = Scheduler({'apscheduler.timezone': 'America/Costa_Rica'})
         self.sched.remove_all_jobs()
         self.sched.start()  # Start the scheduler
-        self.schedule_subscription()
+        self.schedule_subscriptions()
         self.bot.run(host="localhost", port=8080)  # Run Bot
 
-    def clearscreen(self):
+    def clear_screen(self):
         """Function to clear the screen
 
         This function aims to clear the screen independently of the OS the script
@@ -59,7 +60,7 @@ class Hermess():
             self.bot_url = ngrok.connect(port=8080, proto="http")
             print(self.bot_url)
         except Exception:
-            self.clearscreen()
+            self.clear_screen()
             print("You need to close the current terminal, otherwise the HTTP tunnel wont connect")
             input("Press enter to exit.\n")
             raise SystemExit
@@ -256,7 +257,11 @@ class Hermess():
         self.update_schedules()
         return "Form received!"
 
-    # --------- User Functions --------- #
+    # --------- Ping Functions --------- #
+    def ping_user(self, personId, message=None):
+        message = message if message else f"Hello, remember to send the hourly email!"
+        self.api.messages.create(toPersonId=personId, text=message)
+
     def ping_all(self, message=None):
         """Ping all users in the users data file.
 
@@ -267,9 +272,9 @@ class Hermess():
         """
         users_to_ping = self.load_users(file=True)["users"]
         for user in users_to_ping:
-            message = message if message else f"Hello, remember to send the hourly email!"
-            self.api.messages.create(toPersonId=user, text=message)
+            self.ping_user(user, message=message)
 
+    # --------- User Functions --------- #
     def ping_all_users(self, incoming_msg):
         message = f"Broadcast message requestesd by {incoming_msg.personEmail}"
         users_to_ping = self.load_users()["users"]
@@ -329,11 +334,12 @@ class Hermess():
                 s_start = datetime.time(0)
         return hour_list
 
-    def schedule_subscription(self):
+    def schedule_subscriptions(self):
         self.check_user_file()
         stored_users = self.load_users()
         if stored_users:
             for user in stored_users["users"]:
+                name = stored_users["users"][user]["nickName"].split(" ")[0] if "nickName" in stored_users["users"][user] else stored_users["users"][user]["firstName"]
                 if "subscription" in stored_users["users"][user]:
                     subscription = stored_users["users"][user]["subscription"]
                     shift_start = subscription["shiftstart"]
@@ -343,39 +349,39 @@ class Hermess():
                         if subscription[day]:
                             day_num = day.split("day")[-1]
                             invalid = ["shiftstart", "shiftend"]
-                            name = stored_users["users"][user]["nickName"].split(" ")[0] if "nickName" in stored_users["users"][user] else stored_users["users"][user]["firstName"]
                             if day_num not in invalid:
-                                for f_hour, f_min in hour_range:
-                                    self.sched.add_job(self.ping_all, "cron",
+                                for time in hour_range:
+                                    f_hour, f_min = time
+                                    self.sched.add_job(self.ping_user, "cron",
+                                                       args=[user],
                                                        kwargs={"message": f"Hello {name}, remember to send the hourly email!"},
                                                        day_of_week=day_num,
                                                        hour=f_hour,
                                                        minute=f_min,
-                                                       misfire_grace_time=9000)
+                                                       misfire_grace_time=9000,
+                                                       replace_existing=True)
+                else:
+                    self.sched.add_job(self.ping_user,
+                                       "cron",
+                                       args=[user],
+                                       kwargs={"message": f"Hi {name}, looks like you have not updated your subscription, plese reply with /subscribe to update it."},
+                                       hour=22,
+                                       misfire_grace_time=9000)
         else:
             pass
 
     def update_schedules(self):
         self.sched.remove_all_jobs()
-        self.schedule_subscription()
-
-    def list_schedules(self, _):
-        list_of_schedules = self.sched.get_jobs()
-        sched_str = ""
-        for job in list_of_schedules:
-            sched_str = sched_str + str(job)
-        return sched_str
+        self.schedule_subscriptions()
 
     # --------- Bot --------- #
     def add_commands(self):
-        self.bot.add_command("/me", "*", self.get_user_info)
         self.bot.add_command("attachmentActions", "*", self.handle_cards)
         self.bot.add_command("/unsubscribe", "I will stop pinging you", self.unsubscribe)
         self.bot.add_command("/subscribe", "I will ping you at a specified time", self.subscribe)
         self.bot.add_command("/pingall", "*", self.ping_all_users)
         self.bot.add_command("/listsubs", "This will give you a list of all the people who will be pinged", self.list_subscribers)
         self.bot.add_command("/clean", "Removes all the meessages in the conversation", self.remove_messages)
-        self.bot.add_command("/schedules", "shows a list of all scheduled alarms", self.list_schedules)
 
 
 if __name__ == "__main__":
