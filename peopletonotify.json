@@ -47,10 +47,10 @@
                 "day2": "true",
                 "day3": "true",
                 "day4": "true",
-                "day5": "true",
+                "day5": "false",
                 "day6": "false",
-                "shiftend": "04:00",
-                "shiftstart": "22:00"
+                "shiftend": "06:00",
+                "shiftstart": "00:00"
             },
             "type": "person"
         },
@@ -73,6 +73,17 @@
                 }
             ],
             "status": "active",
+            "subscription": {
+                "day0": "true",
+                "day1": "true",
+                "day2": "true",
+                "day3": "true",
+                "day4": "false",
+                "day5": "false",
+                "day6": "true",
+                "shiftend": "04:00",
+                "shiftstart": "22:00"
+            },
             "type": "person"
         },
         "Y2lzY29zcGFyazovL3VzL1BFT1BMRS84OWY3ZmMzNS1mZjRkLTRlNmQtODExNi02ZDBmZjNkMWMwYTk": {
@@ -173,6 +184,17 @@
                 }
             ],
             "status": "active",
+            "subscription": {
+                "day0": "true",
+                "day1": "true",
+                "day2": "true",
+                "day3": "true",
+                "day4": "true",
+                "day5": "false",
+                "day6": "false",
+                "shiftend": "06:00",
+                "shiftstart": "00:00"
+            },
             "type": "person"
         },
         "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9iNWE1YjdkMC1kMjZkLTQyY2UtOWZmMy01Y2UxYzk2MDA2Zjg": {
