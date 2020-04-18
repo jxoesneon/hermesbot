@@ -3,8 +3,8 @@
     "body": [
         {
             "type": "TextBlock",
-            "size": "Medium",
-            "weight": "Bolder",
+            "size": "medium",
+            "weight": "bolder",
             "text": "HermesRCSS - Subscription"
         },
         {
@@ -27,39 +27,46 @@
                                     "title": "Sunday",
                                     "value": "false",
                                     "wrap": false,
-                                    "id": "day0"
+                                    "id": "day6"
                                 },
                                 {
                                     "type": "Input.Toggle",
                                     "title": "Monday",
                                     "value": "false",
                                     "wrap": false,
-                                    "id": "day1"
+                                    "id": "day0"
                                 },
                                 {
                                     "type": "Input.Toggle",
                                     "title": "Tuesday",
                                     "value": "false",
                                     "wrap": false,
-                                    "id": "day2"
+                                    "id": "day1"
                                 },
                                 {
                                     "type": "Input.Toggle",
                                     "title": "Wednesday ",
                                     "value": "false",
                                     "wrap": false,
-                                    "id": "day3"
+                                    "id": "day2"
                                 },
                                 {
                                     "type": "Input.Toggle",
                                     "title": "Thursday ",
                                     "value": "false",
                                     "wrap": false,
-                                    "id": "day4"
+                                    "id": "day3"
                                 },
                                 {
                                     "type": "Input.Toggle",
                                     "title": "Friday",
+                                    "value": "false",
+                                    "wrap": false,
+                                    "id": "day4"
+                                },
+                                {
+                                    "type": "Input.Toggle",
+                                    "title": "Saturday ",
                                     "value": "false",
                                     "wrap": false,
                                     "id": "day5"
@@ -96,13 +103,6 @@
                     ]
                 }
             ]
-        },
-        {
-            "type": "Input.Toggle",
-            "title": "Saturday ",
-            "value": "false",
-            "wrap": false,
-            "id": "day6"
         },
         {
             "type": "ActionSet",

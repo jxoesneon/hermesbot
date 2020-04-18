@@ -46,9 +46,9 @@
                 "day1": "true",
                 "day2": "true",
                 "day3": "true",
-                "day4": "true",
+                "day4": "false",
                 "day5": "false",
-                "day6": "false",
+                "day6": "true",
                 "shiftend": "06:00",
                 "shiftstart": "00:00"
             },
@@ -77,9 +77,9 @@
                 "day0": "true",
                 "day1": "true",
                 "day2": "true",
-                "day3": "true",
+                "day3": "false",
                 "day4": "false",
-                "day5": "false",
+                "day5": "true",
                 "day6": "true",
                 "shiftend": "04:00",
                 "shiftstart": "22:00"
@@ -130,28 +130,6 @@
             "status": "active",
             "type": "person"
         },
-        "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8zOWY2ZDVjNS04YjgyLTQ5N2UtYjhlOS1jMzBlOTNjZmQ2NmE": {
-            "avatar": "https://1efa7a94ed216783e352-c62266528714497a17239ececf39e9e2.ssl.cf1.rackcdn.com/V1~61f383f0ac4fdf1b1f68010574da0fda~cF95N_fsTImNIL1nlg0dHQ==~1600",
-            "created": "2018-06-21T00:20:27.003Z",
-            "displayName": "Javier Jose Calero",
-            "emails": [
-                "javcaler@cisco.com"
-            ],
-            "firstName": "Javier Jose",
-            "id": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8zOWY2ZDVjNS04YjgyLTQ5N2UtYjhlOS1jMzBlOTNjZmQ2NmE",
-            "lastActivity": "2020-03-30T06:59:44.168Z",
-            "lastName": "Calero",
-            "nickName": "Javier Jose",
-            "orgId": "Y2lzY29zcGFyazovL3VzL09SR0FOSVpBVElPTi8xZWI2NWZkZi05NjQzLTQxN2YtOTk3NC1hZDcyY2FlMGUxMGY",
-            "phoneNumbers": [
-                {
-                    "type": "work",
-                    "value": "+1 919 993 9089"
-                }
-            ],
-            "status": "active",
-            "type": "person"
-        },
         "Y2lzY29zcGFyazovL3VzL1BFT1BMRS8zY2E2MDJhNi0zMmNjLTQyZGQtYjQ5Zi1lODBjOGFkNmVjMzE": {
             "created": "2018-11-26T16:41:25.802Z",
             "displayName": "Jose Rojas",
@@ -189,9 +167,9 @@
                 "day1": "true",
                 "day2": "true",
                 "day3": "true",
-                "day4": "true",
+                "day4": "false",
                 "day5": "false",
-                "day6": "false",
+                "day6": "true",
                 "shiftend": "06:00",
                 "shiftstart": "00:00"
             },
@@ -244,9 +222,9 @@
                 "day1": "true",
                 "day2": "true",
                 "day3": "true",
-                "day4": "true",
+                "day4": "false",
                 "day5": "false",
-                "day6": "false",
+                "day6": "true",
                 "shiftend": "04:00",
                 "shiftstart": "22:00"
             },
