@@ -15,6 +15,14 @@ from pprint import pprint
 
 class Hermess():
     def __init__(self):
+        """Webex Teams notification bot for the RCSS Graveyard Team
+        
+        Intended to notify agents on an hourly basis on the agent's schedule to remind them to send an email to their managers.
+        
+        Usage:
+            Just run the hermes.py to start the bot locally, then look for it on Webex Teams, either with the name: HermessRCSS or with the full name: hermesrcss@webex.bot 
+            After that, send the '/subscribe' command to set up the notification times.
+        """        
         self.current_user = None  # Define current interacting user
         self.filepath = "peopletonotify.json"  # Define where to find the users file
         self.baseurl = "https://api.ciscospark.com/v1"  # API vars
@@ -56,6 +64,13 @@ class Hermess():
         os.system("cls" if os.name == "nt" else "clear")
 
     def start_local_server(self):
+        """Start a local Ngrok webhook for the bot
+        
+        This will check for a preexisting Ngrook server and raise an exeption if it finds one as only one instance can be running on the free version of Ngrok
+        
+        Raises:\n
+            SystemExit: When it finds a previous Ngrook service running.
+        """        
         try:
             self.bot_url = ngrok.connect(port=8080, proto="http")
             print(self.bot_url)
@@ -159,7 +174,7 @@ class Hermess():
         return True if self.current_user.id in stored_users["users"] else False
 
     def update_file(self, user=None, data=None, remove=False):
-        """Update the users file with new data
+        r"""Update the users file with new data
 
         Allows to add or remove a user from the users file.
         By default it uses the global current_user to check if the user is in the users file and adds it if not.
