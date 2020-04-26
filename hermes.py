@@ -17,7 +17,7 @@ class Hermess():
     def __init__(self):
         """Webex Teams notification bot for the RCSS Graveyard Team
         
-        Intended to notify agents on an hourly basis on the agent's schedule to remind them to send an email to their managers.
+        Intended to notify agents on an hourly basis on the 9agent's schedule to remind them to send an email to their managers.
         
         Usage:
             Just run the hermes.py to start the bot locally, then look for it on Webex Teams, either with the name: HermessRCSS or with the full name: hermesrcss@webex.bot 
