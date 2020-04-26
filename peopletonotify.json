@@ -195,6 +195,17 @@
                 }
             ],
             "status": "active",
+            "subscription": {
+                "day0": "true",
+                "day1": "true",
+                "day2": "true",
+                "day3": "true",
+                "day4": "true",
+                "day5": "false",
+                "day6": "false",
+                "shiftend": "06:00",
+                "shiftstart": "00:00"
+            },
             "type": "person"
         },
         "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9jMDI4ZjNlMS02ZDFiLTQ4MzYtODg4MC00Mjc5NmQwZjg4MTc": {
