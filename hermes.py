@@ -1,3 +1,10 @@
+"""Hermes Bot RCSS
+
+    Hermes is a bot intended to send reminders at a scpecified time.
+
+    To suscribe to the reminders, find the bot on Webex Teams by searching for "hermesrcss",
+    then send "/subscribe" and specify your shift schedule.
+"""
 # Prod Imports
 import os
 import json
@@ -16,13 +23,14 @@ from pprint import pprint
 class Hermess():
     def __init__(self):
         """Webex Teams notification bot for the RCSS Graveyard Team
-        
+
         Intended to notify agents on an hourly basis on the 9agent's schedule to remind them to send an email to their managers.
-        
+
         Usage:
-            Just run the hermes.py to start the bot locally, then look for it on Webex Teams, either with the name: HermessRCSS or with the full name: hermesrcss@webex.bot 
+            Just run the hermes.py to start the bot locally, then look for it on Webex Teams, either with the name: HermessRCSS or with the full name: hermesrcss@webex.bot\n
             After that, send the '/subscribe' command to set up the notification times.
-        """        
+        """
+        self.clear_screen()
         self.current_user = None  # Define current interacting user
         self.filepath = "peopletonotify.json"  # Define where to find the users file
         self.baseurl = "https://api.ciscospark.com/v1"  # API vars
@@ -46,7 +54,6 @@ class Hermess():
                                                                    "event": "created"}])  # Handles Adaptive cards
         self.bot.set_help_message("Hello, my name is Hermes! You can use the following commands:\n")
         self.add_commands()
-        self.clear_screen()
         self.init_users_file()
         # Create the scheduler
         self.sched = Scheduler({'apscheduler.timezone': 'America/Costa_Rica'})
@@ -65,12 +72,12 @@ class Hermess():
 
     def start_local_server(self):
         """Start a local Ngrok webhook for the bot
-        
+
         This will check for a preexisting Ngrook server and raise an exeption if it finds one as only one instance can be running on the free version of Ngrok
-        
+
         Raises:\n
             SystemExit: When it finds a previous Ngrook service running.
-        """        
+        """
         try:
             self.bot_url = ngrok.connect(port=8080, proto="http")
             print(self.bot_url)
@@ -83,6 +90,10 @@ class Hermess():
     # --------- File Management --------- #
 
     def init_users_file(self):
+        """Discover if the users file is present.
+
+        Attemps to find a preexisting user file, if none is found then it creates a new user file.
+        """
         try:
             with open(self.filepath) as _:
                 print("Users file found!")
@@ -96,9 +107,9 @@ class Hermess():
 
         Simple function to write string data to a file in Json format.
 
-        Args:
+        Args:\n
             data (str): A string containing the data to be written to a file
-            filepath (str, optional): String containing the relative or full path to the file the data is going to be written to. Defaults to filepath.
+            filepath (str, optional): String containing the relative or full path to the file the data is going to be written to. Defaults to self.filepath.
         """
         with open(self.filepath, "w+") as file:
             json.dump(data, file, sort_keys=True, indent=4, separators=(",", ": "))
@@ -110,11 +121,11 @@ class Hermess():
         then it sets the global current_user variable.
         Should be called before any actions that require the current_user variable to ensure it is populated.
 
-        Args:
+        Args:\n
             incoming_msg (Message): Message data received by the API.
 
-        Returns:
-            str: A string containing all the user data gathered.
+        Returns:\n
+            current_user (str): A string containing all the user data gathered.
         """
         personId = incoming_msg.personId
         self.current_user = self.api.people.get(personId)
@@ -143,10 +154,10 @@ class Hermess():
 
         Returns the user data as a list of personId by default or the whole user data block if the file option is set to true.
 
-        Args:
+        Args:\n
             file (bool, optional): If True, it returns the file data instead of just the personId list. Defaults to False.
 
-        Returns:
+        Returns:\n
             str: String containing either a list of personIds or the whole user data set.
         """
         self.check_user_file()
@@ -167,7 +178,7 @@ class Hermess():
 
         Uses the current_user's personId to see if the user has been already added to the user data file.
 
-        Returns:
+        Returns:\n
             bool: True if the current user is in the user data file, False if not.
         """
         stored_users = self.load_users()
@@ -190,12 +201,12 @@ class Hermess():
             To add custom data to a user:
                 update_file(user=personId, data=dict)
 
-        Args:
+        Args:\n
             user (personId, optional): A string containig the personId to change/add. Defaults to None.
             data (str, optional): A string containing the data to add to the user. Defaults to None.
             remove (bool, optional): If true removes the current user from the users data file. Defaults to False.
 
-        Returns:
+        Returns:\n
             str: A string informing of the action taken, either updated, created or removed.
         """
         if user and data:
@@ -231,13 +242,30 @@ class Hermess():
 
     # --------- Adaptive Card --------- #
     def card_subscription(self):
+        """Load the Adaptive Card file
+
+        Loads the json file describing the adaptive card used for the user to enter the work schedule
+
+        Returns:\n
+            JSON: Json string containing the Adaptive info.
+        """
         with open("subscription.json") as file:
             card_json = json.load(file)
         return card_json
 
     def subscription_card(self, personId):
+        """Sends the subscription card to a specified user.
+
+        Gathers the current subscription card from file and sends it to a specified user.
+
+        Args:
+            personId (str): String containing the unique id for the recipient of the subscription card.
+
+        Returns:
+            str: Returns an empty string as it's required by the webexteamsbot package
+        """
         user = personId
-        txt = "If you are seeing this message you might be using teams in a web browser or an older version of the app, please switch to the desktop app or update your desktop app to subscribe. You can get the latest version here:\n\nhttps://www.webex.com/downloads"
+        txt = "If you are seeing this message you might be using teams in a web browser or an older version of the app, please switch to the desktop/mobile app or update your desktop/mobile app to subscribe. You can get the latest version here:\n\nhttps://www.webex.com/downloads\n\n If you are still having problems after this, please ping the developer:\n\njoseeroj@cisco.com"
         card = self.card_subscription()
         attachment = {'contentType': 'application/vnd.microsoft.card.adaptive',
                       'content': card}
@@ -246,17 +274,47 @@ class Hermess():
 
     # --------- Subscriptions --------- #
     def subscribe(self, incoming_msg):
+        """Main function to start the user's subscription process.
+
+        Gets the information of the user requesting to subscribe and updates the users file with the new work schedule information.
+
+        Args:
+            incoming_msg (webexteamssdk.models.immutable.Message): Message provided by the webexteamssdk.
+
+        Returns:
+            str: Request the user to fill out the form.
+        """
         self.get_user_info(incoming_msg)
         self.update_file(user=self.current_user.id, data=self.current_user.to_dict())
         self.subscription_card(self.current_user.id)
         return "Please fill out the subscription form."
 
     def unsubscribe(self, incoming_msg):
+        """Stop the notifications for a user.
+
+        Removes the requesting user from the users file to stop further notifications.
+
+        Args:
+            incoming_msg (webexteamssdk.models.immutable.Message): Message provided by the webexteamssdk.
+
+        Returns:
+            str: Confirmation message if the user was removed successfully
+        """
         self.get_user_info(incoming_msg)
         return self.update_file(remove=True)
 
     # --------- Message Management --------- #
     def get_attachment_actions(self, attachmentid):
+        """Retrieve the incomming attachement.
+
+        Checks for incomming attachements to get the work schedule specified by the user using the adaptive card.
+
+        Args:
+            attachmentid (str): Unique identifier for the incomming attachement.
+
+        Returns:
+            JSON: Json string containing the work schedule.
+        """
         headers = {"content-type": "application/json; charset=utf-8",
                    "authorization": f"Bearer {self.teams_token}"}
         url = f"{self.baseurl}/attachment/actions/{attachmentid}"
@@ -264,7 +322,19 @@ class Hermess():
         return response.json()
 
     # check attachmentActions:created webhook to handle any card actions
-    def handle_cards(self, api, incoming_msg):
+    def handle_cards(self, _api, incoming_msg):
+        """Process the received attached adaptive card info.
+
+        Triggered when a message with attachements is received.
+        Gets the attachement info using the incomming message id and retrieves it from the server
+
+        Args:
+            api (api): Unused api instance provided by webexteamsbot
+            incoming_msg (webexteamssdk.models.immutable.Message): Message provided by the webexteamssdk.
+
+        Returns:
+            str: Success message once the information has been received.
+        """
         message = self.get_attachment_actions(incoming_msg["data"]["id"])
         # Update people to notify file
         self.update_file(user=message["personId"], data=message["inputs"])
@@ -273,16 +343,24 @@ class Hermess():
         return "Form received!"
 
     # --------- Ping Functions --------- #
-    def ping_user(self, personId, message=None):
-        message = message if message else f"Hello, remember to send the hourly email!"
+    def ping_user(self, personId, message="Hello, remember to send the hourly email!"):
+        """Base function to send a 1:1 message to a specified user
+
+        Sends a message to a specific user using the personId as delivery address.
+
+        Args:
+            personId (str): String containing the unique id for the recipient of the subscription card.
+            message (str, optional): string containing the message . Defaults to None.
+        """
         self.api.messages.create(toPersonId=personId, text=message)
 
     def ping_all(self, message=None):
         """Ping all users in the users data file.
 
-        Iters through the list of users and sends them a message
+        Iters through the list of users and sends them a message to all of them.
+        Intended for use only by the bot.
 
-        Args:
+        Args:\n
             message (str, optional): Message to send all users. Defaults to None.
         """
         users_to_ping = self.load_users(file=True)["users"]
@@ -291,6 +369,19 @@ class Hermess():
 
     # --------- User Functions --------- #
     def ping_all_users(self, incoming_msg):
+        """User facing, hidden command, to ping all users.
+
+        Iters through the list of users and sends them a message to all of them.
+        Intended for use by any user aware of the command.
+        Meant to be kept hidden from regular users as it will ping every subscriber.
+        Users will be notified on who requested to send the message through the bot.
+
+        Args:
+            incoming_msg (webexteamssdk.models.immutable.Message): Message provided by the webexteamssdk.
+
+        Returns:
+            str: Success message informing the number of users reached by the sent message.
+        """
         message = f"Broadcast message requestesd by {incoming_msg.personEmail}"
         users_to_ping = self.load_users()["users"]
         responses = []
@@ -300,6 +391,15 @@ class Hermess():
         return f"Ping sent to {len(users_to_ping)} users."
 
     def remove_messages(self, incoming_msg, messageId=None):
+        """Delete a message sent by the bot.
+
+        Removes a specific message if a messageId is specified,  otherwise, it will delete all messages in the 1:1 space the bot shares with the requesting user.
+        Only capable of removing messages sent by the bot due to the restrictions put in place by the Webex Teams API.
+
+        Args:
+            incoming_msg (webexteamssdk.models.immutable.Message): Message provided by the webexteamssdk.
+            messageId (str, optional): String containing the unique identifier for the message to be deleted. Defaults to None.
+        """
         if messageId:
             try:
                 self.api.messages.delete(messageId)
@@ -316,6 +416,16 @@ class Hermess():
                     pass
 
     def list_subscribers(self, _):
+        """See who is subscribed to the notifications.
+
+        Returns a formatted list to the requesting user of all the subscribers to the bot's notifications.
+
+        Args:
+            _ (webexteamssdk.models.immutable.Message): Message provided by the webexteamssdk.
+
+        Returns:
+            str: List of subscribers.
+        """
         subscribers = self.load_users()
         subList = ""
         num = 0
@@ -329,20 +439,33 @@ class Hermess():
         return subList
 
     # --------- Scheduler --------- #
-    def get_hour_range(self, shift_start, shift_end):
+    def get_hour_range(self, shift_start, shift_end, offset=5):
+        """Find the time to ping each user.
+
+        Creates a list of all the times the user needs to be ping during his working hours
+
+        Args:
+            shift_start (str): string containing the hour at wich the notifications should start.
+            shift_end (str): string containing the hour at wich the notifications should end.
+            offset (int): minutes before the hour to send the message. Defaults to 5.
+
+        Returns:
+            list: List containing time objects specifing the diferent hours to ping the user
+        """
         hour_list = []
         s_start = datetime.datetime.strptime(shift_start, "%H:%M").time()
         s_end = datetime.datetime.strptime(shift_end, "%H:%M",).time()
         add_start = True
         while s_start.hour != s_end.hour:
             # Add shift start
+            minute_delta= 60-offset
             if add_start:
                 if s_start.hour == 0:
-                    hour_list.append((23, 55))
+                    hour_list.append((23, minute_delta))
                 else:
-                    hour_list.append(((s_start.hour - 1), 55))
+                    hour_list.append(((s_start.hour - 1), minute_delta))
                 add_start = False
-            hour_list.append((s_start.hour, 55))
+            hour_list.append((s_start.hour, minute_delta))
             if s_start.hour < 23:
                 s_start = datetime.time((s_start.hour + 1))
             else:
@@ -350,6 +473,10 @@ class Hermess():
         return hour_list
 
     def schedule_subscriptions(self):
+        """Create a schedule job to ping the users.
+
+        Gathers the subscription information for each user and schedules a job in order to ping the specified user at the correct time.
+        """
         self.check_user_file()
         stored_users = self.load_users()
         if stored_users:
@@ -381,16 +508,27 @@ class Hermess():
                                        args=[user],
                                        kwargs={"message": f"Hi {name}, looks like you have not updated your subscription, plese reply with /subscribe to update it."},
                                        hour=22,
-                                       misfire_grace_time=9000)
-        else:
-            pass
+                                       misfire_grace_time=9000)  # allows a time discrepancy of 2.5 minutes from the specified hour to handle large ammounts of users having to be pinged at the exact same time.
 
     def update_schedules(self):
+        """Updates the schedules for all users.
+
+        Place holder solution to update the scheduled ping times when a user updates his subscription.
+
+        TODO:\n
+            Create Jobstores for each user or record each user's job id to be able to rechedule a single user without having to reschedule everything.
+        """
         self.sched.remove_all_jobs()
         self.schedule_subscriptions()
 
     # --------- Bot --------- #
     def add_commands(self):
+        """Add command to the bot
+
+        Adds new hidden commands to the bot using the "*" as a second argument.
+        Adds user commands to the bot, the second argument is the description of the command;
+        visible by sending an unrecognise str to the bot or using the "/help" command.
+        """
         self.bot.add_command("attachmentActions", "*", self.handle_cards)
         self.bot.add_command("/unsubscribe", "I will stop pinging you", self.unsubscribe)
         self.bot.add_command("/subscribe", "I will ping you at a specified time", self.subscribe)
@@ -400,4 +538,8 @@ class Hermess():
 
 
 if __name__ == "__main__":
+    """Run the bot.
+
+    Allows the bot to run if the file was called directly.
+    """
     Hermess()
